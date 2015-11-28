@@ -1,4 +1,4 @@
-udp_proxy version 0.02
+udp_proxy version 0.03
 ======================
 
 The README is used to introduce the module and provide instructions on
@@ -34,7 +34,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-Copyright (C) 2008-2011 by Pavel V. Cherenkov
+Copyright (C) 2008-2013 by Pavel V. Cherenkov
 
 udpxy is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

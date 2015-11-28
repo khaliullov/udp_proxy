@@ -1,7 +1,7 @@
 /* @(#) perl binding for udpxy
  *
- * Copyright 2008-2011 Pavel V. Cherenkov (pcherenkov@gmail.com) (pcherenkov@gmail.com)
- * Copyright 2011 Leandr Khaliullov (l.khaliullov@corp.mail.ru) (l.khaliullov@corp.mail.ru)
+ * Copyright 2008-2013 Pavel V. Cherenkov (pcherenkov@gmail.com) (pcherenkov@gmail.com)
+ * Copyright 2011-2015 Leandr Khaliullov (leandr@cpan.org) (leandr@cpan.org)
  *
  *  This file is not part of udpxy.
  *
@@ -42,54 +42,70 @@ extern const char	IPv4_ALL[];
 extern FILE*  g_flog;
 extern volatile sig_atomic_t g_quit;
 
-static int calc_buf_settings( ssize_t* bufmsgs, size_t* sock_buflen )
+/* calculate values for:
+ *  1. number of messages to fit into data buffer
+ *  2. recommended (minimal) size of socket buffer
+ *     (to read into the data buffer)
+ */
+static int
+calc_buf_settings( ssize_t* bufmsgs, size_t* sock_buflen )
 {
 	ssize_t nmsgs = -1, max_buf_used = -1, env_snd_buflen = -1;
 	size_t buflen = 0;
 
-	nmsgs = ( g_uopt.rbuf_msgs > 0 ) ? g_uopt.rbuf_msgs :
-			( int )g_uopt.rbuf_len / ETHERNET_MTU;
+	/* how many messages should we process? */
+	nmsgs = (g_uopt.rbuf_msgs > 0) ? g_uopt.rbuf_msgs :
+			 (int)g_uopt.rbuf_len / ETHERNET_MTU;
 
-	max_buf_used = ( g_uopt.rbuf_msgs > 0 )
-		? ( ssize_t )( nmsgs * ETHERNET_MTU ) : g_uopt.rbuf_len;
-	if( max_buf_used > g_uopt.rbuf_len ) {
+	/* how many bytes could be written at once
+		* to the send socket */
+	max_buf_used = (g_uopt.rbuf_msgs > 0)
+		? (ssize_t)(nmsgs * ETHERNET_MTU) : g_uopt.rbuf_len;
+	if (max_buf_used > g_uopt.rbuf_len) {
 		max_buf_used = g_uopt.rbuf_len;
 	}
 
 	assert( max_buf_used >= 0 );
 
 	env_snd_buflen = get_sizeval( "UDPXY_SOCKBUF_LEN", 0);
-	buflen = ( env_snd_buflen > 0 ) ? ( size_t )env_snd_buflen : ( size_t )max_buf_used;
+	buflen = (env_snd_buflen > 0) ? (size_t)env_snd_buflen : (size_t)max_buf_used;
 
-	if( buflen < ( size_t ) MIN_SOCKBUF_LEN ) {
-		buflen = ( size_t ) MIN_SOCKBUF_LEN;
+	if (buflen < (size_t) MIN_SOCKBUF_LEN) {
+		buflen = (size_t) MIN_SOCKBUF_LEN;
 	}
 
-	if( buflen < ( size_t )max_buf_used ) {
-		buflen = ( size_t )max_buf_used;
+	/* cannot go below the size of effective usage */
+	if( buflen < (size_t)max_buf_used ) {
+		buflen = (size_t)max_buf_used;
 	}
 
-	if( bufmsgs )
-		*bufmsgs = nmsgs;
-	if( sock_buflen )
-		*sock_buflen = buflen;
+	if (bufmsgs) *bufmsgs = nmsgs;
+	if (sock_buflen) *sock_buflen = buflen;
 
 	return 0;
 }
 
-static sig_atomic_t must_quit() {
-	return g_quit;
-}
+/* return 1 if the application must gracefully quit
+ */
+sig_atomic_t must_quit() { return g_quit; }
 
-static void check_mcast_refresh( int msockfd, time_t* last_tm, const struct in_addr* mifaddr )
+/* renew multicast subscription if g_uopt.mcast_refresh seconds
+ * have passed since the last renewal
+ */
+static void
+check_mcast_refresh( int msockfd, time_t* last_tm,
+					 const struct in_addr* mifaddr )
 {
 	time_t now = 0;
 
-	assert( ( msockfd > 0 ) && last_tm && mifaddr );
-	now = time( NULL );
+	if( NULL != g_uopt.srcfile ) /* reading from file */
+		return;
 
-	if( difftime( now, *last_tm ) >= ( double )g_uopt.mcast_refresh ) {
-		( void )renew_multicast( msockfd, mifaddr );
+	assert( (msockfd > 0) && last_tm && mifaddr );
+	now = time(NULL);
+
+	if( now - *last_tm >= g_uopt.mcast_refresh ) {
+		(void) renew_multicast( msockfd, mifaddr );
 		*last_tm = now;
 	}
 

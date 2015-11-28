@@ -24,7 +24,8 @@ WriteMakefile(
     LD                  => '$(CC)',
     CCFLAGS             => '-x c',
     TYPEMAPS            => [ 'perlobject.map' ],
-	# Un-comment this if you add C files to link with later:
+    C                   => ['udp_proxy.c',
+                            grep { $_ !~ /sloop_\w\.\w/ } glob('"*.c"')],
     OBJECT              => '$(O_FILES)', # link all the C files too
 );
 

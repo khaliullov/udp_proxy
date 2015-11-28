@@ -26,7 +26,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 require XSLoader;
 XSLoader::load( 'udp_proxy', $VERSION );
@@ -96,6 +96,8 @@ Method that actualy do the work. Writing data to STDOUT or speciefied handle.
  $host - multicast host to which object should join
  $port - port on which transmission is going.
 
+=back
+
 =head2 EXPORT
 
 None by default.
@@ -112,7 +114,7 @@ Pavel V. Cherenkov, E<lt>pcherenkov@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008-2011 by Pavel V. Cherenkov
+Copyright (C) 2008-2013 by Pavel V. Cherenkov
 
 This library is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
