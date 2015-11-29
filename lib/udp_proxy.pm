@@ -66,12 +66,12 @@ udp_proxy - Perl binding for udpxy
 
   use udp_proxy;
 
-  my $uph = new udp_proxy( {
+  my $uph = new udp_proxy({
       interface => 'eth0',
       log     => 'udp_proxy.log',     # or \*LOG, or $fh, or *LOG
       handle  => 'stream.ts',         # like log, but default to stdout if not set.
-  } );
-  $uph->do_relay( 'rtp', '233.33.210.86', 5050 );
+  });
+  $uph->do_relay('rtp', '233.33.210.86', 5050);
 
 =head1 DESCRIPTION
 
@@ -82,7 +82,7 @@ record or transfer unscrambled multicast traffic.
 
 =over 4
 
-=item my $uph = new udp_proxy( %args );
+=item my $uph = new udp_proxy( \%args );
 
 Method new creates object udp_proxy with some parameters:
  - interface - interface on which object should receive multicast traffic
@@ -102,7 +102,25 @@ Method that actualy do the work. Writing data to STDOUT or speciefied handle.
 
 None by default.
 
+=head1 EXAMPLE
 
+  use udp_proxy;
+
+  my $app = sub {
+      my $env = shift;
+
+      return sub {
+          my $respond = shift;
+          my $writer = $respond->([200, ['Content-Type', 'application/octet-stream']]);
+          my $uph = new udp_proxy({
+              interface => 'en0',
+              log       => $env->{'psgi.errors'},
+              handle    => $env->{'psgix.io'},
+          });
+          $uph->do_relay('rtp', '233.33.210.86', 5050);
+          $writer->close();
+      };
+  };
 
 =head1 SEE ALSO
 
